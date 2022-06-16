@@ -1,0 +1,58 @@
+{
+  "name": "@securecodebox/securecodebox",
+  "version": "1.0.1",
+  "description": "",
+  "homepage": "https://github.com/secureCodeBox/secureCodeBox#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secureCodeBox/secureCodeBox.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint '**/*.js'"
+  },
+  "keywords": [
+    "secureCodeBox",
+    "security"
+  ],
+  "author": {
+    "name": "iteratec GmbH",
+    "email": "securecodebox@iteratec.com",
+    "url": "https://www.iteratec.com"
+  },
+  "contributors": [
+    {
+      "name": "Jannik Hollenbach",
+      "url": "https://github.com/J12934"
+    },
+    {
+      "name": "Robert Seedorff",
+      "url": "https://github.com/rseedorff"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/secureCodeBox/secureCodeBox/issues"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/jest": "^26.0.24",
+    "@types/node": "^16.0.0",
+    "eslint": "^7.31.0",
+    "eslint-config-oclif": "^3.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-security": "^1.4.0",
+    "jest": "^27.0.6",
+    "jest-runner-eslint": "^0.10.1",
+    "prettier": "^2.3.2",
+    "ts-jest": "^27.0.3",
+    "typescript": "^4.3.5"
+  },
+  "jest": {
+    "projects": [
+      "<rootDir>/scanners/",
+      "<rootDir>/hooks/"
+    ]
+  }
+}

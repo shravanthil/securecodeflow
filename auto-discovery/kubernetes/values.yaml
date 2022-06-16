@@ -1,0 +1,105 @@
+# SPDX-FileCopyrightText: the secureCodeBox authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# -- Define imagePullSecrets when a private registry is used (see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+imagePullSecrets: []
+
+image:
+  repository: securecodebox/auto-discovery-kubernetes
+  tag: null
+  # -- Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+  pullPolicy: IfNotPresent
+
+config:
+  # config is using kubebuilder config framework, it may look like this is a crd but its not, see https://book.kubebuilder.io/component-config-tutorial/tutorial.html
+  apiVersion: config.securecodebox.io/v1
+  kind: AutoDiscoveryConfig
+
+  cluster:
+    name: docker-desktop
+  resourceInclusion:
+    mode: enabled-per-namespace
+
+  serviceAutoDiscovery:
+    enabled: true
+    # -- interval in which every service is re-checked for updated pods, if service object is updated directly this the service will get reconciled immediately
+    passiveReconcileInterval: 1m
+    scanConfig:
+      # -- scanType used for the scans created by the serviceAutoDiscovery
+      scanType: zap-advanced-scan
+      # -- parameters used for the scans created by the serviceAutoDiscovery, all parameters support templating
+      parameters:
+        - "-t"
+        - "{{ .Host.Type }}://{{ .Service.Name }}.{{ .Service.Namespace }}.svc:{{ .Host.Port }}"
+      # -- interval in which scans are automatically repeated. If the target is updated (meaning a new image revision is deployed) the scan will repeated beforehand and the interval is reset.
+      repeatInterval: "168h"
+      # -- labels to be added to the scans started by the auto-discovery, all label values support templating
+      labels: {}
+      # -- annotations to be added to the scans started by the auto-discovery, all annotation values support templating
+      annotations:
+        defectdojo.securecodebox.io/product-name: "{{ .Cluster.Name }} | {{ .Namespace.Name }} | {{ .Target.Name }}"
+        defectdojo.securecodebox.io/product-tags: "cluster/{{ .Cluster.Name }},namespace/{{ .Namespace.Name }}"
+        defectdojo.securecodebox.io/engagement-name: "{{ .Target.Name }}"
+        defectdojo.securecodebox.io/engagement-version: "{{if (index .Target.Labels `app.kubernetes.io/version`) }}{{ index .Target.Labels `app.kubernetes.io/version` }}{{end}}"
+      # -- volumes to add to the scan job, see: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#volumes
+      # the fields: `name`, `secret.secretName`, `configMap.name` of each volume support templating
+      volumes: []
+      # -- volumeMounts to add to the scan job, see: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#volumes-1
+      # the fields: `name`, `mountPath`, `subPath`, `subPathExpr` of each volumeMount support templating
+      volumeMounts: []
+
+  containerAutoDiscovery:
+    enabled: false
+    scanConfig:
+      scanType: trivy-image
+      # -- parameters used for the scans created by the containerAutoDiscovery, all parameters support templating
+      parameters:
+        - "{{ .ImageID }}"
+      # -- interval in which scans are automatically repeated. If the target is updated (meaning a new image revision is deployed) the scan will repeated beforehand and the interval is reset.
+      repeatInterval: "168h"
+      # -- labels to be added to the scans started by the auto-discovery, all label values support templating
+      labels: {}
+      # -- annotations to be added to the scans started by the auto-discovery, all annotation values support templating
+      annotations: {}
+      # -- volumes to add to the scan job, see: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#volumes
+      # the fields: `name`, `secret.secretName`, `configMap.name` of each volume support templating
+      volumes: []
+      # -- volumeMounts to add to the scan job, see: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#volumes-1
+      # the fields: `name`, `mountPath`, `subPath`, `subPathExpr` of each volumeMount support templating
+      volumeMounts: []
+
+  health:
+    healthProbeBindAddress: :8081
+  metrics:
+    bindAddress: 127.0.0.1:8080
+  leaderElection:
+    leaderElect: true
+    resourceName: 0e41a1f4.securecodebox.io
+
+# -- Sets the securityContext on the operators container level. See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+securityContext:
+  # securityContext.runAsNonRoot -- Enforces that the Operator image is run as a non root user
+  runAsNonRoot: true
+  # securityContext.readOnlyRootFilesystem -- Prevents write access to the containers file system
+  readOnlyRootFilesystem: true
+  # securityContext.allowPrivilegeEscalation -- Ensure that users privileges cannot be escalated
+  allowPrivilegeEscalation: false
+  # securityContext.privileged -- Ensures that the operator container is not run in privileged mode
+  privileged: false
+  capabilities:
+    drop:
+      # securityContext.capabilities.drop[0] -- This drops all linux privileges from the operator container. They are not required
+      - all
+
+# -- Sets the securityContext on the operators pod level. See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+podSecurityContext: {}
+
+# resources -- CPU/memory resource requests/limits (see: https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/, https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/)
+resources:
+  limits:
+    cpu: 100m
+    memory: 100Mi
+  requests:
+    cpu: 100m
+    memory: 20Mi
